@@ -51,14 +51,14 @@ class Scraper:
             keyword (str): The keyword to search for on Upwork
             
         Returns:
-            dict: The scraped data from the results page
+            list[str]: List of profile URLs found on the first page
         """
         if not self.driver:
             self.start()
             
         try:
             base_url = f"https://www.upwork.com/nx/search/talent/?nbs=1&q={keyword}"
-            return self.page_scraper.scrape_search_page(base_url, 1)
+            return self.page_scraper.extract_profile_links(base_url, 1)
                 
         except Exception as e:
             print(f"Error during scraping: {e}")
@@ -76,25 +76,36 @@ class PageScraper:
         """
         self.driver = driver
         
-    def scrape_search_page(self, base_url, page_number):
+    def extract_profile_links(self, base_url, page_number):
         """
-        Scrapes an Upwork search results page.
+        Extracts profile links from an Upwork search results page.
         
         Args:
             base_url (str): The base URL of the search
             page_number (int): The page number to scrape
             
         Returns:
-            str: The HTML of the profiles section
+            list[str]: List of profile URLs found on the page
         """
         url = f"{base_url}&page={page_number}"
         self.driver.get(url)
         
-        profiles_section = WebDriverWait(self.driver, 10).until(
+        # Wait for the profiles list to be loaded
+        WebDriverWait(self.driver, 10).until(
             EC.presence_of_element_located((By.CLASS_NAME, "profiles-list"))
         )
         
-        return profiles_section.get_attribute('outerHTML')
+        # Find all profile links
+        profile_links = self.driver.find_elements(By.CSS_SELECTOR, "a.profile-link")
+        
+        # Extract and return unique profile URLs
+        unique_urls = set()
+        for link in profile_links:
+            href = link.get_attribute('href')
+            if href and '/freelancers/' in href:
+                unique_urls.add(href)
+                
+        return list(unique_urls)
 
 class ProfileScraper:
     """
