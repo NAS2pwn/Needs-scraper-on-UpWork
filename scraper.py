@@ -573,9 +573,10 @@ class ProfileScraper:
                         "div.air3-token.product-price-start"
                     ).text.strip()
                     
-                    # Parse "From $50" or "$50"
+                    # Parse "From $50" or "$50" or "$6,000"
                     is_from = price_text.startswith('From')
-                    amount = float(price_text.replace('From ', '').replace('$', ''))
+                    amount_str = price_text.replace('From ', '').replace('$', '').replace(',', '')
+                    amount = float(amount_str)
                     
                     # Extract delivery time
                     delivery_text = project.find_element(
